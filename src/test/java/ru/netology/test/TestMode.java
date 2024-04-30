@@ -1,42 +1,28 @@
 package ru.netology.test;
 
-import com.github.javafaker.Faker;
-import io.restassured.RestAssured;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
-import org.junit.jupiter.api.BeforeAll;
+import com.codeborne.selenide.Condition;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+
+import static com.codeborne.selenide.Selectors.byText;
+import static com.codeborne.selenide.Selectors.withText;
+import static com.codeborne.selenide.Selenide.$;
+import static com.codeborne.selenide.Selenide.open;
 import static io.restassured.RestAssured.given;
+import static ru.netology.test.UserGenerator.registerUser;
 
 public class TestMode {
-
-    UserGenerator userGenerator = new UserGenerator();
-    User user = userGenerator.generateUser();
-    Faker faker = new Faker();
-    Status stat = new Status();
-    private static RequestSpecification requestSpec;
-
-    @BeforeAll
-    public static void setUp() {
-        requestSpec = new RequestSpecBuilder()
-                .setBaseUri("http://localhost:9999") // ваш базовый URL
-                .setContentType(ContentType.JSON) // отправка JSON
-                .build();
-        RestAssured.requestSpecification = requestSpec;
+@BeforeEach
+void setUp(){
+    open("http://localhost:9999/");
+}
+    @Test
+void successAuthorization(){
+        var registerUs = registerUser("active");
+        $("[data-test-id='login'] .input__control").sendKeys(registerUs.getLogin());
+        $("[data-test-id='password'] .input__control").sendKeys(registerUs.getPassword());
+        $("[data-test-id='action-login'] .button").click();
+        $(withText("  Личный кабинет")).shouldBe(Condition.visible);
     }
-
-        @Test
-         void setUpAll() {
-            // сам запрос
-            given()
-                    .spec(requestSpec)
-                    .body(new User(faker, stat)) // создаем объект User с использованием Faker и статуса
-                    .when()
-                    .post("/api/system/users")
-                    .then()
-                    .statusCode(200);
-        }
 }
